@@ -1,0 +1,1 @@
+export default function LoadingCourses(){return <section className="loading-state" role="status"><p>Finding your next course…</p><div aria-hidden="true"><div className="skeleton title"/><div className="skeleton block"/></div></section>;}

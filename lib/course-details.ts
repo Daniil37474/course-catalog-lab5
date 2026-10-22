@@ -1,0 +1,12 @@
+export type CourseDetails = { area: string; symbol: string; color: string; topics: string[]; outcome: string; prerequisites: string };
+export const courseDetails: Record<string, CourseDetails> = {
+"modern-frontend": { area: "Frontend", symbol: "</>", color: "mint", topics: ["React components & composition", "Server and Client Components", "App Router & dynamic pages", "TypeScript & accessible interfaces"], outcome: "Build a typed, responsive application with reusable components and clear navigation.", prerequisites: "HTML, CSS and JavaScript fundamentals." },
+"backend-fastapi": { area: "Backend", symbol: "{ }", color: "peach", topics: ["Async Python foundations", "REST endpoints & validation", "Pydantic data models", "API documentation & testing"], outcome: "Design a validated REST API and connect it to a frontend.", prerequisites: "Basic Python and an understanding of HTTP." },
+"databases-postgresql": { area: "Data", symbol: "SQL", color: "lavender", topics: ["Relational schema design", "Queries, joins & constraints", "SQLAlchemy models", "Schema migrations with Alembic"], outcome: "Model application data and manage a relational database with reproducible migrations.", prerequisites: "Basic programming and familiarity with backend applications." },
+"api-design": { area: "Architecture", symbol: "↔", color: "sand", topics: ["Resources & HTTP semantics", "GraphQL schemas & queries", "Pagination & error responses", "API design trade-offs"], outcome: "Choose between REST and GraphQL and explain the trade-offs for your application.", prerequisites: "Familiarity with HTTP and JSON." },
+"web-security": { area: "Security", symbol: "⌘", color: "blue", topics: ["Authentication with JWT & OAuth2", "XSS prevention", "CSRF protection", "SQL injection & safe queries"], outcome: "Identify common web vulnerabilities and apply defensive patterns.", prerequisites: "Basic frontend, backend and database knowledge." },
+"ai-integration": { area: "AI & tools", symbol: "✳", color: "pink", topics: ["LLM API requests", "Prompt structure & context", "Structured responses", "Errors, cost limits & safe key handling"], outcome: "Plan an LLM-powered feature with validation and responsible error handling.", prerequisites: "JavaScript or Python and experience calling an API." }
+};
+export function detailsFor(id: string): CourseDetails {
+ return courseDetails[id] ?? {area:"Web development",symbol:"+",color:"mint",topics:[],outcome:"Develop practical web engineering skills.",prerequisites:"Basic programming."};
+}

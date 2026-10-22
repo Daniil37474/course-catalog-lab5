@@ -1,0 +1,1 @@
+export default function LoadingCourse(){return <section className="loading-state" role="status" aria-live="polite"><p>Loading course…</p><div aria-hidden="true"><div className="skeleton title"/><div className="skeleton"/><div className="skeleton short"/><div className="skeleton block"/></div></section>;}
