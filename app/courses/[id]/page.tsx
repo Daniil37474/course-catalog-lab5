@@ -6,7 +6,6 @@ import { detailsFor } from "@/lib/course-details";
 import LikeButton from "@/components/LikeButton";
 import CourseCard from "@/components/CourseCard";
 type CoursePageProps = {params:Promise<{id:string}>};
-export async function generateStaticParams() { return (await getCourses()).map(c=>({id:c.id})); }
 export async function generateMetadata({params}:CoursePageProps):Promise<Metadata> {
  const {id}=await params;
  const course=await getCourse(id);
