@@ -17,7 +17,8 @@ export default async function CoursePage({params}:CoursePageProps) {
  const course=await getCourse(id);
  if(!course) notFound();
  const details=detailsFor(id);
- const related=(await getCourses()).filter(c=>c.id!==id).slice(0,3);
+ // Recommendations are optional; a list error must not hide an available course.
+ const related=(await getCourses().catch(() => [])).filter(c=>c.id!==id).slice(0,3);
  return <>
  <nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/courses">← All courses</Link><span>/</span><span>{details.area}</span></nav>
  <section className="detail-hero"><div><span className="eyebrow">{details.area} / {course.isElective?"ELECTIVE":"REQUIRED"}</span><h1>{course.title}</h1><p>{course.description}</p></div><div className={`detail-art ${details.color}`} aria-hidden="true">{details.symbol}</div></section>
