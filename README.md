@@ -1,98 +1,78 @@
-# Forma — Course Catalog
+# Forma — каталог курсов
 
-A redesigned course catalog for **Advanced Web Technologies, Lab 1**.
-Built on Next.js 16 App Router, React 19, TypeScript and Tailwind CSS 4.
+Лабораторная работа 5: интеграция Next.js 16.3.4 и FastAPI, контракт JSON и диагностика CORS. Сохранены оформление Forma, поиск, сортировка и дополнительные сведения о курсах.
 
-## Run locally
+## Репозитории
 
-Requires Node.js 20.9 or newer and npm.
+- Frontend: https://github.com/Gisg22/course-catalog
+- Backend: https://github.com/Gisg22/course-catalog-api
 
-```bash
+## Запуск
+
+Нужны Node.js 20.9+ и работающий backend из второго репозитория.
+
+```powershell
 npm ci
-npm run dev
+Copy-Item .env.example .env.local
+npm run dev -- --port 3000
 ```
 
-Open the local address printed by Next.js (normally http://localhost:3000).
+Открыть **http://localhost:3000**. Для лабораторной важен именно этот origin: `http://127.0.0.1:3000` и другой порт не разрешены backend.
 
-```bash
-npm run build
-npm start
+Содержимое `.env.local`:
+
+```dotenv
+API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+`API_URL` используется на сервере Next.js. `NEXT_PUBLIC_API_URL` попадает в браузерный JavaScript при сборке и не должен содержать секретов. После создания файла перезапустить dev-сервер; при изменении адреса в production пересобрать frontend. `.env.local` исключён из Git, `.env.example` содержит только пример адресов.
+
+## Что работает
+
+| Страница или действие | Кто обращается к FastAPI | Запрос |
+| --- | --- | --- |
+| `/courses` | Сервер Next.js | `GET /courses` |
+| `/courses/[id]` | Сервер Next.js | `GET /courses/{id}` |
+| `/filter` | Браузер, SWR | `GET /courses?is_elective=true` |
+| Лайк | Браузер | `POST /courses/{id}/like` |
+| Запись на курс | Браузер | `POST /enrollments` с JSON |
+
+`getCourses` и `getCourse` используют `cache: "no-store"`, проверяют HTTP-статус и возвращают типизированные данные. Только 404 отдельного курса означает `undefined`; остальные ошибки попадают в `app/courses/error.tsx`. Кнопка Try again вызывает `retry`, доступный в Next.js 16.3.4: данные запрашиваются повторно.
+
+`generateStaticParams` удалён: список курсов теперь находится в API и меняется без пересборки frontend. Сборка не должна обращаться к выключенному backend; `/courses` и `/courses/[id]` формируются по запросу.
+
+В Python остаются `is_elective`, `course_id`, `student_name`. В JSON — `isElective`, `courseId`, `studentName`. Query-параметр фильтра остаётся `is_elective`. Клиентские компоненты импортируют из `lib/courses.ts` только типы.
+
+Лайк — простой POST без тела и специальных заголовков: предварительный OPTIONS не нужен. Запись отправляет `Content-Type: application/json`, поэтому браузер сначала проверяет разрешение через OPTIONS. При разрешении он отправляет POST; ответ 201 содержит номер записи, 422 — описание ошибки поля `studentName`. Проверка длины имени в браузере намеренно отсутствует, чтобы показать серверную валидацию.
+
+Разрешение preflight кэшируется на 600 секунд. При повторной отправке OPTIONS может отсутствовать, а с отключённым кэшем выполняется снова. CORS ограничивает чтение ответа браузером, а не исполнение простого запроса на сервере; это не механизм авторизации.
+
+## Проверка
+
+```powershell
 npm run lint
 npm test
+npm run build
+npm start -- --port 3000
 ```
 
-## Lab requirements
+Сборку выполнить с выключенным backend. Для работы страниц снова запустить backend на порту 8000. Тесты frontend не зависят от запущенного API: проверяют фильтрацию, сортировку, обработку 404, 503 и отказа соединения.
 
-- Static Server Component pages at `/` and `/about`.
-- Server-rendered `/courses` calls `await getCourses()`.
-- Six exact sample course records from the assignment; mock responses wait 300 ms.
-- Typed `CourseCard` Server Component: its entire card is a Next.js Link.
-- `/courses/[id]` awaits `params: Promise<{ id: string }>` and `getCourse(id)`.
-- `generateStaticParams()` prebuilds every sample course page.
-- Unknown course IDs call `notFound()`; a custom recovery page links to the catalog.
-- Course loading UI lives in `app/courses/[id]/loading.tsx`.
-- `components/LikeButton.tsx` is the only application file with a `"use client"` directive.
-- Likes use `useState<number>(initialLikes)` and increment by one per click.
-- Shared navigation uses Next.js Link and Tailwind classes.
-- Original teammate commits are preserved; follow-up work is committed separately.
+Ручные сценарии:
 
-## Improvements
+1. `/courses` показывает шесть карточек; первым идёт AI/LLM Integration.
+2. На `/filter` переключатель Electives only меняет шесть курсов на два: AI/LLM Integration и API Design. Видна отметка elective.
+3. На `/courses/web-security` лайк увеличивает серверный счётчик; после перезагрузки число сохраняется.
+4. Имя `A` в форме даёт сообщение сервера о минимальной длине; `Aigerim` — номер записи. `GET http://localhost:8000/enrollments` возвращает её.
+5. `/courses/does-not-exist` показывает страницу Course not found.
+6. Остановленный backend вызывает страницу ошибки; после запуска Try again возвращает данные.
+7. Временная задержка backend позволяет увидеть loading; перед сдачей задержку убрать.
 
-- Forma visual identity, responsive layouts, illustrated course cards, keyboard focus states,
-  skip navigation and reduced-motion support.
-- Title search, required/elective filters, sorting by likes, credits or title.
-- Shareable query-string selections, reset action and a useful empty state.
-- Search uses Next.js Form and server rendering; no additional application Client Component.
-- Course detail pages include illustrative topics, outcomes, prerequisites and related courses.
-- Course-specific page metadata, custom app icon and an explanatory About page.
-- Automated tests for combined filtering, duplicate query parameters, sorting and data integrity.
+## Ограничения
 
-## Data and limitations
+Курсы, лайки и записи хранятся в памяти процесса FastAPI и сбрасываются при его перезапуске. Авторизации, базы данных и учебных материалов пока нет. Дополнительные темы и результаты обучения — иллюстративные сведения, не официальный учебный план.
 
-This is a catalog demo, not an enrolment platform. There is no authentication, enrolment,
-real backend or lesson player. Expanded topics/outcomes/prerequisites are study suggestions,
-not an official syllabus. Likes are local to the current mounted page; a reload restores
-the sample count. Popularity sorting uses the original sample counts, not local likes.
+## Журнал диагностики
 
-The 300 ms delay is present in the data helpers. A loading fallback can appear in development
-or on an uncached request. Prebuilt pages and client navigation caches may make it invisible
-in production. Course card prefetching is disabled to make the fallback easier to observe.
-
-## Manual acceptance checks
-
-1. Start the development server and visit `/`, `/about` and `/courses`.
-2. Open each of the six course cards.
-3. On a course page, click Like several times: the number must increase each time.
-4. Reload the course page: the sample count must return.
-5. Open `/courses/does-not-exist` and follow the recovery link.
-6. Search for `react`; combine it with Required, then Elective to check the empty state.
-7. Sort all courses by Most liked: AI/LLM Integration must be first.
-8. Copy a filtered URL and reopen it; check the selected controls and results.
-9. Check narrow screens and keyboard navigation.
-10. Run the build, lint and test commands above.
-
-## Deployment
-
-This project requires a Next.js server because catalog filters use request-time search parameters.
-Import the GitHub repository into a Next.js-compatible host (for example Vercel), keeping the
-default build command `npm run build`. No environment variables are required.
-
-## Project structure
-
-```text
-app/
-  layout.tsx, page.tsx, globals.css, icon.svg, not-found.tsx
-  about/page.tsx
-  courses/
-    page.tsx, loading.tsx, not-found.tsx
-    [id]/page.tsx, loading.tsx
-components/
-  CourseCard.tsx
-  LikeButton.tsx
-lib/
-  courses.ts          # Assignment mock records and async helpers
-  catalog.ts          # Pure search/filter/sort logic
-  course-details.ts   # Illustrative learning information
-tests/
-  catalog.test.mjs
-```
+Результаты проверок и воспроизведённые ошибки приведены ниже.

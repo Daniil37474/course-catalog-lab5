@@ -15,6 +15,7 @@ function loadTs(file) {
  return mod.exports;
 }
 const {filterCourses,first} = loadTs("lib/catalog.ts");
+process.env.API_URL = "http://api.test";
 const {getCourses,getCourse} = loadTs("lib/courses.ts");
 const {courseDetails} = loadTs("lib/course-details.ts");
 const sample = [
@@ -41,26 +42,26 @@ test("repeated query keys use the first value; unknown options safely fall back"
  assert.deepEqual(filterCourses(sample,{q:["React","API"]}).map(c=>c.id),["a"]);
  assert.deepEqual(filterCourses(sample,{sort:"invalid",type:"invalid"}),sample);
 });
-test("all six assignment records and supplemental entries agree",async()=>{
- const courses=await getCourses();
- assert.deepEqual(courses.map(c=>[c.id,c.credits,c.isElective,c.likes]),[
- ["modern-frontend",5,false,24],["backend-fastapi",5,false,19],
- ["databases-postgresql",5,false,15],["api-design",4,true,11],
- ["web-security",4,false,21],["ai-integration",5,true,32]
- ]);
- for(const course of courses) assert.equal(courseDetails[course.id].topics.length,4);
- assert.equal(await getCourse("does-not-exist"),undefined);
- assert.equal((await getCourse("modern-frontend")).title,"Modern Frontend: React & Next.js");
-});
-test("LikeButton remains the only application client boundary",()=>{
- const clientFiles=[];
- for(const directory of ["app","components","lib"]) {
-  function visit(dir) { for(const entry of fs.readdirSync(dir,{withFileTypes:true})) {
-   const full=path.join(dir,entry.name);
-   if(entry.isDirectory()) visit(full);
-   else if(/\.tsx?$/.test(entry.name)&&/^\s*["']use client["'];?/m.test(fs.readFileSync(full,"utf8"))) clientFiles.push(path.relative(path.join(__dirname,".."),full).replaceAll("\\","/"));
-  }}
-  visit(path.join(__dirname,"..",directory));
- }
- assert.deepEqual(clientFiles,["components/LikeButton.tsx"]);
+test("API helpers handle success, 404, HTTP errors and connection failure",async(t)=>{
+ const requests=[];
+ let status=200;
+ let payload=sample;
+ t.mock.method(globalThis,"fetch",async(url,options)=>{
+  requests.push({url,options});
+  return new Response(JSON.stringify(payload),{status,headers:{"Content-Type":"application/json"}});
+ });
+ assert.deepEqual(await getCourses(),sample);
+ assert.deepEqual(requests[0],{url:"http://api.test/courses",options:{cache:"no-store"}});
+ payload=sample[0];
+ assert.deepEqual(await getCourse("a"),sample[0]);
+ assert.equal(requests[1].url,"http://api.test/courses/a");
+ status=404;
+ assert.equal(await getCourse("missing"),undefined);
+ await assert.rejects(getCourses(),/API error: 404/);
+ status=503;
+ await assert.rejects(getCourse("a"),/API error: 503/);
+ await assert.rejects(getCourses(),/API error: 503/);
+ t.mock.method(globalThis,"fetch",async()=>{throw new TypeError("fetch failed");});
+ await assert.rejects(getCourses(),/fetch failed/);
+ assert.equal(Object.keys(courseDetails).length,6);
 });
