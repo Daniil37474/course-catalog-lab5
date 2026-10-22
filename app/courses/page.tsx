@@ -18,7 +18,7 @@ export default async function CoursesPage({searchParams}:{searchParams:Promise<Q
  <Form action="/courses" className="filter-form" key={JSON.stringify([q,type,sort])}>
  <label className="field"><span>Search courses</span><input type="search" name="q" placeholder="e.g. React" defaultValue={q} maxLength={200}/></label>
  <fieldset><legend className="filter-label">Course type</legend>{[["all","All courses"],["required","Required"],["elective","Elective"]].map(([value,label])=><label className="radio" key={value}><input type="radio" name="type" value={value} defaultChecked={type===value}/>{label}</label>)}</fieldset>
- <label className="field"><span>Sort by</span><select name="sort" defaultValue={sort}><option value="default">Learning order</option><option value="popular">Most liked</option><option value="credits">Most credits</option><option value="title">Title A–Z</option></select></label>
+ <label className="field"><span>Sort by</span><select name="sort" defaultValue={sort}><option value="default">Most liked (default)</option><option value="popular">Most liked</option><option value="credits">Most credits</option><option value="title">Title A–Z</option></select></label>
  <div className="filter-actions"><button className="button primary" type="submit">Apply filters →</button><Link href="/courses" className="text-link">Reset filters</Link></div>
  </Form><p className="filter-tip">Your filters stay in the page address. Copy the link to share the same selection.</p></aside>
  <section aria-label="Course results"><div className="results-bar"><span>{filtered.length} of {courses.length} courses{q.trim() ? ` · “${q.trim()}”` : ""}</span><span>{filtered.reduce((sum,c)=>sum+c.credits,0)} credits in this selection</span></div>
